@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Labor – Fall suchen</h3>
+<form method="get" class="row g-2 mb-3">
+  <div class="col-auto">
+    <label class="form-label">Fallnummer</label>
+    <input name="case_code" value="{{ form.data.case_code }}" class="form-control" placeholder="z.B. C-2025-00012">
+  </div>
+  <div class="col-auto align-self-end">
+    <button class="btn btn-primary">Suchen</button>
+  </div>
+</form>
+
+{% if case %}
+  <div class="card">
+    <div class="card-body">
+      <div class="mb-2"><strong>Fall:</strong> {{ case.case_code }}</div>
+      <div class="mb-2"><strong>Patient:</strong> {{ case.patient_name }} ({{ case.patient_dob|date:'d.m.Y' }})</div>
+      <div class="mb-2"><strong>Labor:</strong> {{ case.lab }}</div>
+      <div class="mb-2"><strong>Status:</strong> {{ case.get_status_display }}</div>
+      <a class="btn btn-outline-primary" href="{% url 'lab_case_detail' case.id %}">Öffnen</a>
+    </div>
+  </div>
+{% elif form.data.case_code %}
+  <div class="alert alert-warning">Kein Fall gefunden.</div>
+{% endif %}
+{% endblock %}

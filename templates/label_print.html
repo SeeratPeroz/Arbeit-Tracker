@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-print-none mb-3">
+<button class="btn btn-primary" onclick="window.print()">Drucken</button>
+<a class="btn btn-outline-secondary" href="/cases/{{ case.id }}/">Zurück</a>
+</div>
+<div class="label-a6 border p-3">
+<div class="d-flex justify-content-between">
+<div>
+<div class="fw-bold">{{ case.case_code }}</div>
+<div>{{ case.patient_name }}</div>
+<div>Geb.: {{ case.patient_dob|date:'d.m.Y' }}</div>
+<div>Labor: {{ case.lab }}</div>
+<!-- By default we do NOT print the protection code for safety.
+If you want it visible, uncomment next line: -->
+<!-- <div>Sicherheitscode: <strong>{{ case.protection_code }}</strong></div> -->
+<div class="mt-1 small">Status: {{ case.get_status_display }}</div>
+</div>
+<img alt="QR" src="/cases/{{ case.id }}/qr.png" style="width:160px;height:160px;"/>
+</div>
+<div class="small mt-2">Scannen → Status aktualisieren</div>
+</div>
+{% endblock %}

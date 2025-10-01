@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block content %}
+<h3>Neuer Fall</h3>
+<form method="post" class="mt-3">{% csrf_token %}
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">Patientenname</label>
+      {{ form.patient_name }}
+      {% if form.patient_name.errors %}<div class="text-danger small">{{ form.patient_name.errors }}</div>{% endif %}
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Geburtsdatum</label>
+      {{ form.patient_dob }}
+      {% if form.patient_dob.errors %}<div class="text-danger small">{{ form.patient_dob.errors }}</div>{% endif %}
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Labor</label>
+      {{ form.lab }}
+      {% if form.lab.errors %}<div class="text-danger small">{{ form.lab.errors }}</div>{% endif %}
+    </div>
+  </div>
+  <div class="mt-4 d-flex gap-2">
+    <button class="btn btn-secondary" name="save" value="1">Speichern</button>
+    <button class="btn btn-primary" name="print" value="1">Speichern & Etikett drucken</button>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,5 @@
+/* Hide nav when printing */
+@media print {
+nav, .d-print-none { display: none !important; }
+.label-a6 { width: 105mm; height: 148mm; }
+}

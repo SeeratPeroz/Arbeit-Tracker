@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Übersicht</h3>
+  {% if request.user.is_authenticated and request.user.profile.role == "CLINIC" %}
+    <a class="btn btn-primary" href="/cases/new/">+ Neuer Fall</a>
+  {% endif %}
+</div>
+
+
+
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="p-3 border rounded text-center">
+      <div class="fw-bold">Gesendet</div>
+      <div class="display-6">{{ counts.sent }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="p-3 border rounded text-center">
+      <div class="fw-bold">Im Labor</div>
+      <div class="display-6">{{ counts.in_lab }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="p-3 border rounded text-center">
+      <div class="fw-bold">Zurück</div>
+      <div class="display-6">{{ counts.returned }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="p-3 border rounded text-center">
+      <div class="fw-bold">Abgeschlossen</div>
+      <div class="display-6">{{ counts.completed }}</div>
+    </div>
+  </div>
+</div>
+
+<h5>Neueste Fälle</h5>
+<table class="table table-sm align-middle">
+  <thead>
+    <tr>
+      <th>Fall</th>
+      <th>Patient</th>
+      <th>Geburtsdatum</th>
+      <th>Labor</th>
+      <th>Status</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for c in recent %}
+      <tr>
+        <td>{{ c.case_code }}</td>
+        <td>{{ c.patient_name }}</td>
+        <td>{{ c.patient_dob|date:'d.m.Y' }}</td>
+        <td>{{ c.lab }}</td>
+        <td>{{ c.get_status_display }}</td>
+        <td><a class="btn btn-sm btn-outline-primary" href="/cases/{{ c.id }}/">Öffnen</a></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6" class="text-muted">Keine Fälle</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

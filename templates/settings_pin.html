@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Globaler PIN</h3>
+<form method="post" class="mt-3">{% csrf_token %}
+  {% for msg in messages %}<div class="alert alert-{{ msg.tags }}">{{ msg }}</div>{% endfor %}
+  <div class="mb-3">
+    <label class="form-label">Aktueller PIN</label>
+    <input name="current_pin" maxlength="6" class="form-control">
+    <div class="form-text">Leer lassen, wenn noch kein PIN gesetzt.</div>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Neuer PIN (6-stellig)</label>
+    <input name="new_pin" maxlength="6" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Bestätigen</label>
+    <input name="confirm_pin" maxlength="6" class="form-control" required>
+  </div>
+  <button class="btn btn-primary">Speichern</button>
+</form>
+{% endblock %}

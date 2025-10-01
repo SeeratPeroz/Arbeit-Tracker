@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center">
+  <h3>{{ case.case_code }}</h3>
+  <div class="d-flex gap-2">
+    {% if case.status == 'RETURNED_BY_LAB' and request.user.profile.role == 'CLINIC' %}
+      <a class="btn btn-success btn-sm" href="{% url 'clinic_mark_received' case.id %}">
+        In Praxis erhalten
+      </a>
+    {% endif %}
+    <a class="btn btn-outline-secondary btn-sm" href="/cases/{{ case.id }}/label/">Etikett drucken</a>
+  </div>
+</div>
+
+<div class="row g-3 mt-1">
+  <!-- Info card -->
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <div><strong>Patient:</strong> {{ case.patient_name }} ({{ case.patient_dob|date:'d.m.Y' }})</div>
+        <div><strong>Labor:</strong> {{ case.lab }}</div>
+        <div><strong>Status:</strong> {{ case.get_status_display }}</div>
+        <div><strong>Schutzcode (PIN):</strong> {{ case.protection_code }}</div>
+        <div><strong>Token URL:</strong> 
+          <code>{{ request.scheme }}://{{ request.get_host }}/t/{{ case.qr_token }}/</code>
+        </div>
+        <div class="mt-3">
+          <img alt="QR" src="/cases/{{ case.id }}/qr.png" style="width:160px;height:160px;"/>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timeline card -->
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Verlauf</h5>
+        <ul class="list-group list-group-flush">
+          {% for e in case.events.all %}
+            <li class="list-group-item">
+              <div class="small text-muted">{{ e.created_at|date:'d.m.Y H:i' }}</div>
+              <div>{{ e.get_status_display }}{% if e.note %}: <em>{{ e.note }}</em>{% endif %}</div>
+            </li>
+          {% empty %}
+            <li class="list-group-item text-muted">Noch keine Ereignisse</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
