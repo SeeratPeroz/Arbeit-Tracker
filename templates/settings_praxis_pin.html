@@ -1,17 +1,171 @@
 {% extends 'base.html' %}
+{% block title %}Praxis-PIN & Labore — Case Tracker{% endblock %}
 {% block content %}
-<h3>Praxis-PIN ändern</h3>
-<form method="post" class="mt-3">
-  {% csrf_token %}
-  {% for m in messages %}<div class="alert alert-{{ m.tags }}">{{ m }}</div>{% endfor %}
-  <div class="mb-3">
-    <label class="form-label">Neuer Praxis-PIN (6-stellig)</label>
-    <input name="new_pin" maxlength="6" class="form-control" required>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Labore & PINs</h3>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#labCreateModal">
+    Neues Labor
+  </button>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Kontakt</th>
+            <th>PIN gesetzt</th>
+            <th class="text-end">Aktionen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lab in labs %}
+            <tr>
+              <td class="fw-semibold">{{ lab.name }}</td>
+              <td>{{ lab.contact|default:"—" }}</td>
+              <td>
+                {% if lab.pin_hash %}<span class="badge text-bg-success">Ja</span>
+                {% else %}<span class="badge text-bg-secondary">Nein</span>{% endif %}
+              </td>
+              <td class="text-end">
+                <button
+                  class="btn btn-sm btn-outline-secondary me-2"
+                  data-bs-toggle="modal"
+                  data-bs-target="#labEditModal"
+                  data-lab-id="{{ lab.id }}"
+                  data-lab-name="{{ lab.name|escape }}"
+                  data-lab-contact="{{ lab.contact|escape }}"
+                >Bearbeiten</button>
+
+                <button
+                  class="btn btn-sm btn-outline-warning"
+                  data-bs-toggle="modal"
+                  data-bs-target="#labPinModal"
+                  data-lab-id="{{ lab.id }}"
+                  data-lab-name="{{ lab.name|escape }}"
+                >PIN ändern</button>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4" class="text-muted">Keine Labore vorhanden.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
-  <div class="mb-3">
-    <label class="form-label">Bestätigen</label>
-    <input name="confirm_pin" maxlength="6" class="form-control" required>
+</div>
+
+<!-- Create Modal -->
+<div class="modal fade" id="labCreateModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" method="post" action="{% url 'clinic_create_lab' %}">
+      {% csrf_token %}
+      <div class="modal-header">
+        <h5 class="modal-title">Neues Labor</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Name</label>
+          <input name="name" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Kontakt</label>
+          <input name="contact" class="form-control" placeholder="optional">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Abbrechen</button>
+        <button class="btn btn-primary" type="submit">Anlegen</button>
+      </div>
+    </form>
   </div>
-  <button class="btn btn-primary">Speichern</button>
-</form>
+</div>
+
+<!-- Edit Modal (re-used, populated by JS) -->
+<div class="modal fade" id="labEditModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="labEditForm" class="modal-content" method="post" action="#">
+      {% csrf_token %}
+      <div class="modal-header">
+        <h5 class="modal-title">Labor bearbeiten</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Name</label>
+          <input id="labEditName" name="name" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Kontakt</label>
+          <input id="labEditContact" name="contact" class="form-control" placeholder="optional">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Abbrechen</button>
+        <button class="btn btn-primary" type="submit">Speichern</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- PIN Modal (re-used, populated by JS) -->
+<div class="modal fade" id="labPinModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="labPinForm" class="modal-content" method="post" action="#">
+      {% csrf_token %}
+      <div class="modal-header">
+        <h5 class="modal-title"><span id="pinLabName">PIN ändern</span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info small">
+          Aus Sicherheitsgründen wird der PIN nie im Klartext angezeigt. Sie können hier einen neuen PIN setzen.
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Neuer PIN (6-10 Stellen)</label>
+            <input name="new_pin" pattern="[A-Za-z0-9]{6,10}" minlength="6" maxlength="10" required>
+          <div class="form-text">Nur Ziffern, 6-10 Stellen.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Abbrechen</button>
+        <button class="btn btn-warning" type="submit">PIN setzen</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  // Edit Modal: inject action + field values
+  const editModal = document.getElementById('labEditModal');
+  editModal.addEventListener('show.bs.modal', function (ev){
+    const btn = ev.relatedTarget;
+    const id = btn.getAttribute('data-lab-id');
+    const name = btn.getAttribute('data-lab-name') || '';
+    const contact = btn.getAttribute('data-lab-contact') || '';
+    const form = document.getElementById('labEditForm');
+    form.setAttribute('action', `/labs/${id}/edit/`);
+    document.getElementById('labEditName').value = name;
+    document.getElementById('labEditContact').value = contact;
+  });
+
+  // PIN Modal: inject action + lab name
+  const pinModal = document.getElementById('labPinModal');
+  pinModal.addEventListener('show.bs.modal', function (ev){
+    const btn = ev.relatedTarget;
+    const id = btn.getAttribute('data-lab-id');
+    const name = btn.getAttribute('data-lab-name') || '';
+    const form = document.getElementById('labPinForm');
+    form.setAttribute('action', `/labs/${id}/set-pin/`);
+    document.getElementById('pinLabName').textContent = `PIN ändern — ${name}`;
+  });
+});
+</script>
 {% endblock %}

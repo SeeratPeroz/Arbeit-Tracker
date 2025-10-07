@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}Labor — Fall {{ case.case_code }}{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Fall {{ case.case_code }}</h3>
+  <span class="badge rounded-pill status-badge" data-status="{{ case.status }}">
+    {{ case.get_status_display }}
+  </span>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="mb-3">Details</h5>
+        <dl class="row">
+          <dt class="col-sm-3">Patient</dt><dd class="col-sm-9">{{ case.patient_name }} ({{ case.patient_dob|date:'d.m.Y' }})</dd>
+          <dt class="col-sm-3">Labor</dt><dd class="col-sm-9">{{ case.lab }}</dd>
+          <dt class="col-sm-3">ETA</dt><dd class="col-sm-9">{{ case.eta|default:'—' }}</dd>
+          <dt class="col-sm-3">Substage</dt><dd class="col-sm-9">{{ case.get_substage_display|default:'—' }}</dd>
+          <dt class="col-sm-3">Status</dt><dd class="col-sm-9">{{ case.get_status_display }}</dd>
+          <img src="{% url 'lab_case_qr_png' case.pk %}" alt="QR" class="img-thumbnail" style="max-width:140px">
+        </dl>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-body">
+        <h5 class="mb-3">Dateien</h5>
+        <ul class="list-group mb-3">
+          {% for f in case.attachments.all %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <div class="fw-semibold">{{ f.label|default:f.file.name }}</div>
+                <div class="small text-muted">{{ f.created_at|date:'d.m.Y H:i' }}</div>
+              </div>
+              <a class="btn btn-sm btn-outline-secondary" href="{{ f.file.url }}" target="_blank">Öffnen</a>
+            </li>
+          {% empty %}
+            <li class="list-group-item text-muted">Keine Dateien</li>
+          {% endfor %}
+        </ul>
+
+        <form method="post" action="{% url 'lab_case_files' case.pk %}" enctype="multipart/form-data" class="row g-2">
+          {% csrf_token %}
+          <div class="col-12 col-md-6">
+            <input type="file" name="file" class="form-control" required>
+          </div>
+          <div class="col-12 col-md-4">
+            <input type="text" name="label" class="form-control" placeholder="Beschreibung (optional)">
+          </div>
+          <div class="col-12 col-md-2 d-grid">
+            <button class="btn btn-outline-primary" type="submit">Hochladen</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-body">
+        <h5 class="mb-3">Aktivitäten</h5>
+        <ul class="list-group">
+          {% for e in case.events.all %}
+            <li class="list-group-item small">
+              <span class="text-muted">{{ e.created_at|date:'d.m.Y H:i' }}</span>
+              — <strong>{{ e.action }}</strong>
+              {% if e.payload.tracking %} (Tracking: {{ e.payload.tracking }}){% endif %}
+              {% if e.payload.filename %} ({{ e.payload.filename }}){% endif %}
+            </li>
+          {% empty %}
+            <li class="list-group-item text-muted">Keine Aktivitäten</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="mb-3">Aktionen</h5>
+
+        <!-- Check-in -->
+        {% if case.status != 'IN_LAB' and case.status == 'SENT' %}
+          <form method="post" action="{% url 'lab_case_status' case.pk %}" class="mb-3">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="checkin">
+            <button class="btn btn-primary w-100" type="submit">Als „Im Labor“ markieren</button>
+          </form>
+        {% endif %}
+
+        <!-- Update substage/ETA -->
+        <form method="post" action="{% url 'lab_case_status' case.pk %}" class="mb-3">
+          {% csrf_token %}
+          {{ status_form.as_p }}
+          <button class="btn btn-outline-secondary w-100" type="submit">Fortschritt speichern</button>
+        </form>
+
+        <!-- Return to clinic -->
+        <form method="post" action="{% url 'lab_case_return' case.pk %}" class="mb-3">
+          {% csrf_token %}
+          {{ return_form.as_p }}
+          <button class="btn btn-warning w-100" type="submit">Zurück an Praxis senden</button>
+        </form>
+
+        <div class="alert alert-info small mb-0">
+          <strong>Hinweis:</strong> „In Praxis erhalten“ kann <u>nur</u> die Praxis bestätigen (Praxis-PIN).
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

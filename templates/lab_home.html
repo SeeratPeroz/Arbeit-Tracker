@@ -20,6 +20,7 @@
       <div class="mb-2"><strong>Status:</strong> {{ case.get_status_display }}</div>
       <a class="btn btn-outline-primary" href="{% url 'lab_case_detail' case.id %}">Öffnen</a>
     </div>
+    
   </div>
 {% elif form.data.case_code %}
   <div class="alert alert-warning">Kein Fall gefunden.</div>

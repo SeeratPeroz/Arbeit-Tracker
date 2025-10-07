@@ -1,29 +1,46 @@
+<!-- templates/case_form.html -->
 {% extends 'base.html' %}
-{% load widget_tweaks %}
-
+{% block title %}Neuer Fall — Case Tracker{% endblock %}
 {% block content %}
-<h3>Neuer Fall</h3>
-<form method="post" class="mt-3">{% csrf_token %}
-  <div class="row g-3">
-    <div class="col-md-6">
-      <label class="form-label">Patientenname</label>
+<h3 class="mb-3">{{ case|yesno:"Fall bearbeiten,Neuer Fall" }}</h3>
+
+<form method="post" class="card">
+  <div class="card-body">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    {% if case %}
+      <div class="mb-3">
+        <label class="form-label">Fall-Code</label>
+        <input class="form-control" value="{{ case.case_code }}" readonly>
+      </div>
+    {% endif %}
+
+    <div class="mb-3">
+      <label class="form-label">Patient</label>
       {{ form.patient_name }}
-      {% if form.patient_name.errors %}<div class="text-danger small">{{ form.patient_name.errors }}</div>{% endif %}
+      {{ form.patient_name.errors }}
     </div>
-    <div class="col-md-3">
+
+    <div class="mb-3">
       <label class="form-label">Geburtsdatum</label>
       {{ form.patient_dob }}
-      {% if form.patient_dob.errors %}<div class="text-danger small">{{ form.patient_dob.errors }}</div>{% endif %}
+      {{ form.patient_dob.errors }}
     </div>
-    <div class="col-md-3">
+
+    <div class="mb-3">
       <label class="form-label">Labor</label>
       {{ form.lab }}
-      {% if form.lab.errors %}<div class="text-danger small">{{ form.lab.errors }}</div>{% endif %}
+      {{ form.lab.errors }}
     </div>
-  </div>
-  <div class="mt-4 d-flex gap-2">
-    <button class="btn btn-secondary" name="save" value="1">Speichern</button>
-    <button class="btn btn-primary" name="print" value="1">Speichern & Etikett drucken</button>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary" type="submit">Speichern</button>
+      <a class="btn btn-outline-secondary"
+         href="{% if case %}{% url 'case_detail' case.pk %}{% else %}{% url 'cases_list' %}{% endif %}">
+        Abbrechen
+      </a>
+    </div>
   </div>
 </form>
 {% endblock %}

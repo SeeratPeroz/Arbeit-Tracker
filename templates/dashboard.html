@@ -1,69 +1,116 @@
 {% extends 'base.html' %}
+{% block title %}Übersicht — Case Tracker{% endblock %}
 {% block content %}
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h3>Übersicht</h3>
+  <h3 class="mb-0">Übersicht</h3>
   {% if request.user.is_authenticated and request.user.profile.role == "CLINIC" %}
-    <a class="btn btn-primary" href="/cases/new/">+ Neuer Fall</a>
+    <a class="btn btn-primary" href="{% url 'case_new' %}"><i class="bi bi-plus-lg me-1"></i>Neuer Fall</a>
   {% endif %}
 </div>
 
-
-
-
 <div class="row g-3 mb-4">
-  <div class="col-md-3">
-    <div class="p-3 border rounded text-center">
-      <div class="fw-bold">Gesendet</div>
+  <div class="col-6 col-md-3">
+    <div class="p-3 border rounded-3 text-center">
+      <div class="fw-semibold text-muted">Gesendet</div>
       <div class="display-6">{{ counts.sent }}</div>
     </div>
   </div>
-  <div class="col-md-3">
-    <div class="p-3 border rounded text-center">
-      <div class="fw-bold">Im Labor</div>
+  <div class="col-6 col-md-3">
+    <div class="p-3 border rounded-3 text-center">
+      <div class="fw-semibold text-muted">Im Labor</div>
       <div class="display-6">{{ counts.in_lab }}</div>
     </div>
   </div>
-  <div class="col-md-3">
-    <div class="p-3 border rounded text-center">
-      <div class="fw-bold">Zurück</div>
+  <div class="col-6 col-md-3">
+    <div class="p-3 border rounded-3 text-center">
+      <div class="fw-semibold text-muted">Zurück</div>
       <div class="display-6">{{ counts.returned }}</div>
     </div>
   </div>
-  <div class="col-md-3">
-    <div class="p-3 border rounded text-center">
-      <div class="fw-bold">Abgeschlossen</div>
+  <div class="col-6 col-md-3">
+    <div class="p-3 border rounded-3 text-center">
+      <div class="fw-semibold text-muted">Abgeschlossen</div>
       <div class="display-6">{{ counts.completed }}</div>
     </div>
   </div>
 </div>
 
-<h5>Neueste Fälle</h5>
-<table class="table table-sm align-middle">
-  <thead>
-    <tr>
-      <th>Fall</th>
-      <th>Patient</th>
-      <th>Geburtsdatum</th>
-      <th>Labor</th>
-      <th>Status</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for c in recent %}
-      <tr>
-        <td>{{ c.case_code }}</td>
-        <td>{{ c.patient_name }}</td>
-        <td>{{ c.patient_dob|date:'d.m.Y' }}</td>
-        <td>{{ c.lab }}</td>
-        <td>{{ c.get_status_display }}</td>
-        <td><a class="btn btn-sm btn-outline-primary" href="/cases/{{ c.id }}/">Öffnen</a></td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="6" class="text-muted">Keine Fälle</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="d-flex justify-content-between align-items-baseline mb-2">
+  <h5 class="mb-0">Neueste Fälle</h5>
+  <a href="{% url 'cases_list' %}" class="small text-decoration-none">Alle Fälle ansehen →</a>
+</div>
 
+<div class="card">
+  <div class="card-body">
+    <div class="row g-2 align-items-center mb-3">
+      <div class="col-auto">
+        <i class="bi bi-search me-1"></i><span class="text-muted">Suche</span>
+      </div>
+      <div class="col-12 col-md">
+        <input id="recentSearch" type="search" class="form-control" placeholder="Fall, Patient, Labor, Status …">
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table id="recentTable" class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>Fall</th>
+            <th>Patient</th>
+            <th>Geburtsdatum</th>
+            <th>Labor</th>
+            <th>Status</th>
+            <th class="text-end">Aktion</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in recent %}
+            <tr>
+              <td class="fw-semibold">{{ c.case_code }}</td>
+              <td>{{ c.patient_name }}</td>
+              <td data-order="{{ c.patient_dob|date:'Y-m-d' }}">{{ c.patient_dob|date:'d.m.Y' }}</td>
+              <td>{{ c.lab }}</td>
+              <td>
+                <span class="badge rounded-pill status-badge" data-status="{{ c.status }}">{{ c.get_status_display }}</span>
+              </td>
+              <td class="text-end table-actions">
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'case_detail' c.id %}">
+                  <i class="bi bi-box-arrow-up-right"></i> Öffnen
+                </a>
+                <button class="btn btn-sm btn-outline-danger"
+                        data-bs-toggle="modal"
+                        data-bs-target="#deleteConfirmModal"
+                        data-action="{% url 'case_delete' c.id %}">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6" class="text-muted">Keine Fälle</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    const dt = new DataTable('#recentTable', {
+      fixedHeader: true,
+      responsive: true,
+      pageLength: 10,
+      order: [[2,'desc']], // sort by DOB by default (desc)
+      language: {
+        url: 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/de-DE.json'
+      }
+    });
+    const input = document.getElementById('recentSearch');
+    input?.addEventListener('input', () => dt.search(input.value).draw());
+  });
+</script>
 {% endblock %}

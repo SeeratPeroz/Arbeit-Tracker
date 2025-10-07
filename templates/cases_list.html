@@ -1,33 +1,145 @@
 {% extends 'base.html' %}
+{% block title %}Fälle — Case Tracker{% endblock %}
 {% block content %}
-<div class="d-flex align-items-center mb-3 gap-2">
 
-<a href="?" class="btn btn-outline-secondary btn-sm {% if not status %}active{% endif %}">Alle</a>
-<a href="?status=SENT_CLINIC" class="btn btn-outline-secondary btn-sm {% if status == 'SENT_CLINIC' %}active{% endif %}">Gesendet</a>
-<a href="?status=RECEIVED_BY_LAB" class="btn btn-outline-secondary btn-sm {% if status == 'RECEIVED_BY_LAB' %}active{% endif %}">Im Labor</a>
-<a href="?status=RETURNED_BY_LAB" class="btn btn-outline-secondary btn-sm {% if status == 'RETURNED_BY_LAB' %}active{% endif %}">Zurück</a>
-<a href="?status=RECEIVED_BY_CLINIC" class="btn btn-outline-secondary btn-sm {% if status == 'RECEIVED_BY_CLINIC' %}active{% endif %}">Abgeschlossen</a>
-<form method="get" class="ms-auto d-flex gap-2">
-{% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
-<input name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Suche (Fall/Patient)">
-<button class="btn btn-primary btn-sm">Suchen</button>
-</form>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+  <h3 class="mb-0">Fälle</h3>
+  {% if request.user.is_authenticated and request.user.profile.role == "CLINIC" %}
+    <a class="btn btn-primary" href="{% url 'case_new' %}">
+      <i class="bi bi-plus-lg me-1"></i>Neuer Fall
+    </a>
+  {% endif %}
 </div>
-<table class="table table-striped table-hover align-middle">
-<thead><tr><th>Fall</th><th>Patient</th><th>Geburtsdatum</th><th>Labor</th><th>Status</th><th></th></tr></thead>
-<tbody>
-{% for c in cases %}
-<tr>
-<td>{{ c.case_code }}</td>
-<td>{{ c.patient_name }}</td>
-<td>{{ c.patient_dob|date:'d.m.Y' }}</td>
-<td>{{ c.lab }}</td>
-<td>{{ c.get_status_display }}</td>
-<td><a class="btn btn-sm btn-outline-primary" href="/cases/{{ c.id }}/">Öffnen</a></td>
-</tr>
-{% empty %}
-<tr><td colspan="6" class="text-muted">Keine Fälle</td></tr>
-{% endfor %}
-</tbody>
-</table>
+
+<div class="sticky-toolbar border rounded-3 p-3 mb-3">
+  <div class="row g-2">
+    <div class="col-12 col-md">
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input id="casesSearch" type="search" class="form-control" placeholder="Suche: Fall, Patient, Labor, Status …">
+      </div>
+    </div>
+    <div class="col-12 col-md-auto">
+      <div class="btn-group" role="group" aria-label="Status-Filter">
+        <button class="btn btn-outline-secondary active" data-filter-status="">Alle</button>
+        <button class="btn btn-outline-secondary" data-filter-status="SENT_CLINIC">Gesendet</button>
+        <button class="btn btn-outline-secondary" data-filter-status="RECEIVED_BY_LAB">Im Labor</button>
+        <button class="btn btn-outline-secondary" data-filter-status="RETURNED_BY_LAB">Zurück</button>
+        <button class="btn btn-outline-secondary" data-filter-status="RECEIVED_BY_CLINIC">Abgeschlossen</button>
+      </div>
+    </div>
+    <div class="col-12 col-md-auto">
+      <select id="labFilter" class="form-select">
+        <option value="">Alle Labore</option>
+        {% if labs %}
+          {% for lab in labs %}
+            <option value="{{ lab }}">{{ lab }}</option>
+          {% endfor %}
+        {% endif %}
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table id="casesTable" class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Fall</th>
+            <th>Patient</th>
+            <th>Geburtsdatum</th>
+            <th>Labor</th>
+            <th>Status</th>
+            <th>Aktualisiert</th>
+            <th class="text-end">Aktion</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in cases %}
+            <tr>
+              <td class="fw-semibold">{{ c.case_code }}</td>
+              <td>{{ c.patient_name }}</td>
+              <td data-order="{{ c.patient_dob|date:'Y-m-d' }}">{{ c.patient_dob|date:'d.m.Y' }}</td>
+              <td>{{ c.lab.name }}</td>
+              <td>
+                <span class="badge rounded-pill status-badge" data-status="{{ c.status }}">
+                  {{ c.get_status_display }}
+                </span>
+              </td>
+              <td data-order="{{ c.updated_at|date:'Y-m-d H:i' }}">{{ c.updated_at|date:'d.m.Y H:i' }}</td>
+              <td class="text-end table-actions">
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'case_detail' c.id %}">
+                  <i class="bi bi-box-arrow-up-right"></i>
+                </a>
+                <a class="btn btn-sm btn-outline-secondary" href="{% url 'case_edit' c.id %}">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <button class="btn btn-sm btn-outline-danger"
+                        title="Löschen"
+                        data-bs-toggle="modal"
+                        data-bs-target="#deleteConfirmModal"
+                        data-action="{% url 'case_delete' c.id %}">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="7" class="text-muted">Keine Fälle gefunden</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
+
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const dt = $('#casesTable').DataTable({
+    fixedHeader: true,
+    responsive: true,
+    pageLength: 25,
+    order: [[5,'desc']],
+    language: { url: 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/de-DE.json' }
+  });
+
+  // global search
+  $('#casesSearch').on('input', function(){ dt.search(this.value).draw(); });
+
+  // status buttons via data-status (robust)
+  let activeStatus = '';
+  $.fn.dataTable.ext.search.push(function(settings, data, dataIndex){
+    if (settings.nTable !== document.getElementById('casesTable')) return true;
+    if (!activeStatus) return true;
+    const code = dt.row(dataIndex).node().querySelector('.status-badge')?.getAttribute('data-status') || '';
+    return code === activeStatus;
+  });
+  $('[data-filter-status]').on('click', function(){
+    $('[data-filter-status]').removeClass('active');
+    $(this).addClass('active');
+    activeStatus = $(this).data('filter-status') || '';
+    dt.draw();
+  });
+
+  // lab dropdown (column 3 exact). Auto-fill if not provided.
+  const $lab = $('#labFilter');
+  if ($lab[0] && $lab[0].options.length <= 1) {
+    const names = new Set();
+    dt.column(3).data().each(v => names.add(v));
+    [...names].sort().forEach(n => $('<option>').val(n).text(n).appendTo($lab));
+  }
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  $lab.on('change', function(){
+    const v = this.value;
+    dt.column(3).search(v ? '^'+esc(v)+'$' : '', true, false).draw();
+  });
+});
+</script>
+{% endblock %}
+
+

@@ -1,34 +1,52 @@
 from django.urls import include, path
 from . import views
 
-
 urlpatterns = [
+    # Home
     path("", views.home, name="home"),
-    path('', include('django.contrib.auth.urls')),    
-    path('', views.dashboard, name='dashboard'),
-    path('cases/', views.cases_list, name='cases_list'),
-    path('cases/new/', views.case_new, name='case_new'),
-    path('cases/<int:pk>/', views.case_detail, name='case_detail'),
-    path('cases/<int:pk>/label/', views.label_print, name='label_print'),
-    path('cases/<int:pk>/qr.png', views.case_qr_png, name='case_qr_png'),
+
+    # Auth (login, logout, password reset, etc.)
+    path("", include("django.contrib.auth.urls")),
+
+    path("dashboard/", views.dashboard, name="dashboard"),
+
+
+
+    # Clinic
+    path("cases/", views.cases_list, name="cases_list"),
+    path("cases/new/", views.case_new, name="case_new"),
+    path("cases/<int:pk>/", views.case_detail, name="case_detail"),
+    path("cases/<int:pk>/label/", views.label_print, name="label_print"),
+    path("cases/<int:pk>/qr.png", views.case_qr_png, name="case_qr_png"),
     path("cases/<int:pk>/receive/", views.clinic_mark_received, name="clinic_mark_received"),
+    path("cases/<int:pk>/edit/", views.case_edit, name="case_edit"),
+    path("cases/<int:pk>/delete/", views.case_delete, name="case_delete"),
     path("settings/pin/", views.settings_pin, name="settings_pin"),
-    path("labs/<int:lab_id>/set-pin/", views.clinic_set_lab_pin, name="clinic_set_lab_pin"),
     path("settings/praxis-pin/", views.settings_praxis_pin, name="settings_praxis_pin"),
-
-
-    path("lab/cases/", views.lab_cases_list, name="lab_cases_list"),
-    path("lab/case/<int:pk>/", views.lab_case_detail, name="lab_case_detail"),
-
-    # Public QR
-    path("t/<uuid:token>/", views.public_token_view, name="public_token"),
+    path("labs/<int:lab_id>/set-pin/", views.clinic_set_lab_pin, name="clinic_set_lab_pin"),
 
     # Lab
     path("lab/", views.lab_home, name="lab_home"),
-    path("lab/case/<int:pk>/", views.lab_case_detail, name="lab_case_detail"),
+    # Alias so old links like {% url 'lab_dashboard' %} keep working:
+    path("lab/dashboard/", views.lab_home, name="lab_dashboard"),
+    path("lab/cases/", views.lab_cases_list, name="lab_cases"),
+    path("lab/cases/<int:pk>/", views.lab_case_detail, name="lab_case_detail"),
+    path("lab/cases/<int:pk>/qr.png", views.lab_case_qr_png, name="lab_case_qr_png"),
+    path("labs/new/", views.clinic_create_lab, name="clinic_create_lab"),
+    path("labs/<int:lab_id>/edit/", views.clinic_edit_lab, name="clinic_edit_lab"),
+    path("labs/<int:lab_id>/set-pin/", views.clinic_set_lab_pin, name="clinic_set_lab_pin"),
+    path("labs/users/", views.clinic_lab_users, name="clinic_lab_users"),
+    path("labs/users/new/", views.clinic_create_lab_user, name="clinic_create_lab_user"),
+    # tracker/urls.py (add these)
+    path("labs/users/", views.clinic_lab_users, name="clinic_lab_users"),
+    path("labs/users/<int:user_id>/edit/", views.clinic_edit_lab_user, name="clinic_edit_lab_user"),
+    path("labs/users/<int:user_id>/toggle/", views.clinic_toggle_lab_user, name="clinic_toggle_lab_user"),
 
+    # Dashboard TV
+    path("display/board/", views.display_board, name="display_board"),
+    path("api/dashboard/recent/", views.dashboard_recent_api, name="dashboard_recent_api"),
+    path("api/dashboard/counts/", views.dashboard_counts_api, name="dashboard_counts_api"),
 
-    # Authentication 
-    path('logout/', views.user_logout, name='logout'),
-
+    # Public QR
+    path("t/<uuid:token>/", views.public_token_view, name="public_token"),
 ]

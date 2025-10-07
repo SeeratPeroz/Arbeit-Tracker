@@ -8,7 +8,8 @@
       <div><strong>Patient:</strong> {{ case.patient_name }} ({{ case.patient_dob|date:'d.m.Y' }})</div>
       <div><strong>Status:</strong> {{ case.get_status_display }}</div>
       <div class="mt-3">
-        <img alt="QR" src="/cases/{{ case.id }}/qr.png" style="width:160px;height:160px;"/>
+        <img src="{% url 'lab_case_qr_png' case.pk %}" alt="QR" class="img-thumbnail" style="max-width:140px">
+
       </div>
     </div></div>
   </div>

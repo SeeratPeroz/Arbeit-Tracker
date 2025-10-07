@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Fall bearbeiten — {{ case.case_code }}{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Fall bearbeiten</h3>
+  <span class="text-muted">Code: <strong>{{ case.case_code }}</strong></span>
+</div>
+
+<form method="post" class="card card-body">
+  {% csrf_token %}
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">Fall-Code</label>
+      <input class="form-control" value="{{ case.case_code }}" disabled>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label d-block">Status</label>
+      <span class="badge rounded-pill status-badge" data-status="{{ case.status }}">
+        {{ case.get_status_display }}
+      </span>
+    </div>
+  </div>
+
+  <hr>
+  {{ form.as_p }}
+
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary" type="submit">Speichern</button>
+    <a class="btn btn-outline-secondary" href="{% url 'case_detail' case.pk %}">Abbrechen</a>
+
+    <!-- delete using the global modal from base.html -->
+    <button type="button"
+            class="btn btn-outline-danger ms-auto"
+            data-bs-toggle="modal"
+            data-bs-target="#deleteConfirmModal"
+            data-action="{% url 'case_delete' case.pk %}">
+      Löschen
+    </button>
+  </div>
+</form>
+
+{% endblock %}

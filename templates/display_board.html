@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %}Live-Board — Case Tracker{% endblock %}
+{% block content %}
+
+<style>
+  /* Bigger, TV-friendly */
+  .tv-counters .display-6 { font-size: 3rem; }
+  .tv-table { font-size: 1.1rem; }
+  .tv-status .badge { font-size: 1rem; padding: .6rem .9rem; }
+</style>
+
+<div class="mb-3 d-flex align-items-center justify-content-between">
+  <h3 class="mb-0">Live-Board</h3>
+  <small class="text-muted">Automatische Aktualisierung</small>
+</div>
+
+<div class="row g-3 mb-4 tv-counters">
+  <div class="col-6 col-lg-3">
+    <div class="p-3 border rounded-3 text-center">
+      <div class="fw-semibold text-muted">Gesendet</div>
+      <div class="display-6" id="countSent">{{ counts.sent|default:"–" }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="p-3 border rounded-3 text-center">
+      <div class="fw-semibold text-muted">Im Labor</div>
+      <div class="display-6" id="countInLab">{{ counts.in_lab|default:"–" }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="p-3 border rounded-3 text-center">
+      <div class="fw-semibold text-muted">Zurück</div>
+      <div class="display-6" id="countReturned">{{ counts.returned|default:"–" }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="p-3 border rounded-3 text-center">
+      <div class="fw-semibold text-muted">Abgeschlossen</div>
+      <div class="display-6" id="countCompleted">{{ counts.completed|default:"–" }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive tv-table">
+      <table id="boardTable" class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Fall</th>
+            <th>Patient</th>
+            <th>Geburtsdatum</th>
+            <th>Labor</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div id="reconnectBanner" class="alert alert-warning mt-3 d-none">
+        Verbindung verloren – versuche zu aktualisieren …
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  // DataTable for TV: no paging/search/info; server already orders newest first
+  const dt = $('#boardTable').DataTable({
+    ajax: { url: "{% url 'dashboard_recent_api' %}?limit=50", dataSrc: '' },
+    columns: [
+      { data: 'case_code', render: d => `<span class="fw-semibold">${d}</span>` },
+      { data: 'patient_name' },
+      { data: 'patient_dob', orderData: [5] },
+      { data: 'lab' },
+      { data: null, className: 'tv-status', render: (d,t,row) =>
+          `<span class="badge rounded-pill status-badge" data-status="${row.status}">${row.status_label}</span>`
+      },
+      // hidden sort key for DOB
+      { data: 'patient_dob_order', visible:false }
+    ],
+    paging: false,
+    searching: false,
+    info: false,
+    ordering: true,
+    order: [[2,'desc']],
+    fixedHeader: true,
+    responsive: true,
+    language: { url: 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/de-DE.json' }
+  });
+
+  const $banner = $('#reconnectBanner');
+
+  function refreshCounts(){
+    fetch("{% url 'dashboard_counts_api' %}")
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(c => {
+        document.getElementById('countSent').textContent = c.sent;
+        document.getElementById('countInLab').textContent = c.in_lab;
+        document.getElementById('countReturned').textContent = c.returned;
+        document.getElementById('countCompleted').textContent = c.completed;
+        $banner.addClass('d-none');
+      })
+      .catch(() => $banner.removeClass('d-none'));
+  }
+
+  function refreshAll(){
+    dt.ajax.reload(() => $banner.addClass('d-none'), false);
+    refreshCounts();
+  }
+
+  // Initial load
+  refreshAll();
+  // Auto-refresh every 15s (tweak to 10–30s to taste)
+  setInterval(refreshAll, 15000);
+});
+</script>
+{% endblock %}

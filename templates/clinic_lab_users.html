@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% block title %}Labor-Logins — Case Tracker{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Labor-Logins</h3>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">Neuen Login anlegen</button>
+</div>
+
+<div class="card">
+  <div class="card-body table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr><th>Labor</th><th>Benutzername</th><th>E-Mail</th><th>Status</th><th class="text-end">Aktionen</th></tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+          <tr>
+            <td>{{ u.profile.lab.name }}</td>
+            <td class="fw-semibold">{{ u.username }}</td>
+            <td>{{ u.email|default:"—" }}</td>
+            <td>
+              {% if u.is_active %}
+                <span class="badge text-bg-success">Aktiv</span>
+              {% else %}
+                <span class="badge text-bg-secondary">Deaktiviert</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-secondary me-2"
+                      data-bs-toggle="modal"
+                      data-bs-target="#editUserModal"
+                      data-user-id="{{ u.id }}"
+                      data-username="{{ u.username|escape }}"
+                      data-email="{{ u.email|default:''|escape }}"
+                      data-lab-id="{{ u.profile.lab.id }}"
+                      data-active="{{ u.is_active|yesno:'1,0' }}">
+                Bearbeiten
+              </button>
+
+              <form method="post" action="{% url 'clinic_toggle_lab_user' u.id %}" class="d-inline">
+                {% csrf_token %}
+                {% if u.is_active %}
+                  <input type="hidden" name="action" value="disable">
+                  <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Diesen Login deaktivieren?')">
+                    Deaktivieren
+                  </button>
+                {% else %}
+                  <input type="hidden" name="action" value="enable">
+                  <button class="btn btn-sm btn-outline-success" onclick="return confirm('Diesen Login aktivieren?')">
+                    Aktivieren
+                  </button>
+                {% endif %}
+              </form>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="text-muted">Keine Labor-Logins vorhanden.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- CREATE MODAL (you already had this via LabUserCreateForm) -->
+<div class="modal fade" id="createModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" method="post" action="{% url 'clinic_create_lab_user' %}">
+      {% csrf_token %}
+      <div class="modal-header">
+        <h5 class="modal-title">Neuen Labor-Login anlegen</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        {{ form.non_field_errors }}
+        <div class="mb-3">
+          <label class="form-label">Labor</label>
+          {{ form.lab }}
+        </div>
+        <div class="mb-3"><label class="form-label">Benutzername</label>{{ form.username }}</div>
+        <div class="mb-3"><label class="form-label">E-Mail (optional)</label>{{ form.email }}</div>
+        <div class="mb-3"><label class="form-label">Passwort</label>{{ form.password1 }}</div>
+        <div class="mb-3"><label class="form-label">Passwort wiederholen</label>{{ form.password2 }}</div>
+        <div class="form-check">{{ form.is_active }} <label class="form-check-label">Aktiv</label></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Abbrechen</button>
+        <button class="btn btn-primary" type="submit">Anlegen</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="editUserForm" class="modal-content" method="post" action="#">
+      {% csrf_token %}
+      <div class="modal-header">
+        <h5 class="modal-title">Labor-Login bearbeiten</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Labor</label>
+          <select id="editLab" name="lab" class="form-select" required>
+            {% for lab in labs %}
+              <option value="{{ lab.id }}">{{ lab.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3"><label class="form-label">Benutzername</label><input id="editUsername" name="username" class="form-control" required></div>
+        <div class="mb-3"><label class="form-label">E-Mail (optional)</label><input id="editEmail" name="email" class="form-control"></div>
+        <div class="form-check mb-3"><input id="editActive" type="checkbox" name="is_active" class="form-check-input"><label class="form-check-label" for="editActive">Aktiv</label></div>
+        <hr>
+        <div class="mb-2 small text-muted">Passwort nur ändern, wenn nötig:</div>
+        <div class="mb-3"><label class="form-label">Neues Passwort</label><input id="editPass1" type="password" name="password1" class="form-control" minlength="8"></div>
+        <div class="mb-3"><label class="form-label">Neues Passwort (Wiederholung)</label><input id="editPass2" type="password" name="password2" class="form-control" minlength="8"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Abbrechen</button>
+        <button class="btn btn-primary" type="submit">Speichern</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const editModal = document.getElementById('editUserModal');
+  editModal.addEventListener('show.bs.modal', function (ev){
+    const btn = ev.relatedTarget;
+    const id = btn.getAttribute('data-user-id');
+    const username = btn.getAttribute('data-username') || '';
+    const email = btn.getAttribute('data-email') || '';
+    const labId = btn.getAttribute('data-lab-id') || '';
+    const active = btn.getAttribute('data-active') === '1';
+
+    const form = document.getElementById('editUserForm');
+    form.setAttribute('action', `{% url 'clinic_edit_lab_user' 0 %}`.replace('/0/', `/${id}/`));
+
+    document.getElementById('editUsername').value = username;
+    document.getElementById('editEmail').value = email;
+    document.getElementById('editLab').value = labId;
+    document.getElementById('editActive').checked = active;
+
+    document.getElementById('editPass1').value = '';
+    document.getElementById('editPass2').value = '';
+  });
+});
+</script>
+{% endblock %}

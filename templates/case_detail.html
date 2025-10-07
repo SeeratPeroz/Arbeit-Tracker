@@ -20,7 +20,6 @@
         <div><strong>Patient:</strong> {{ case.patient_name }} ({{ case.patient_dob|date:'d.m.Y' }})</div>
         <div><strong>Labor:</strong> {{ case.lab }}</div>
         <div><strong>Status:</strong> {{ case.get_status_display }}</div>
-        <div><strong>Schutzcode (PIN):</strong> {{ case.protection_code }}</div>
         <div><strong>Token URL:</strong> 
           <code>{{ request.scheme }}://{{ request.get_host }}/t/{{ case.qr_token }}/</code>
         </div>

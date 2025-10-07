@@ -12,7 +12,7 @@ load_dotenv(BASE_DIR / ".env")
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-key")
 DEBUG = os.getenv("DEBUG", "1") == "1"
 # settings.py
-ALLOWED_HOSTS = ["192.168.15.140", "127.0.0.1", "localhost"]
+ALLOWED_HOSTS = ["tracker.cleverimplant.de", "127.0.0.1", "localhost"]
 
 # Installed apps
 INSTALLED_APPS = [
@@ -93,7 +93,7 @@ LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/login/"
 
 # Public base URL (used for QR links)
-PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "http://192.168.15.140:8000")
+PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://tracker.cleverimplant.de")
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
