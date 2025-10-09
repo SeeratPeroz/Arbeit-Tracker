@@ -1,5 +1,6 @@
 import io
 import qrcode
+from django.conf import settings
 from django.urls import reverse
 from django.http import JsonResponse
 from django.contrib import messages
@@ -620,3 +621,11 @@ def dashboard_counts_api(request):
         "returned": Case.objects.filter(status=Case.Status.RETURNED_BY_LAB).count(),
         "completed": Case.objects.filter(status=Case.Status.RECEIVED_BY_CLINIC).count(),
     })
+
+
+
+
+@login_required
+def help_guide(request):
+    contact_email = getattr(settings, "SUPPORT_EMAIL", "s.peroz@dens-health-management.de")
+    return render(request, "help.html", {"contact_email": contact_email})

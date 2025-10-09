@@ -9,6 +9,8 @@ urlpatterns = [
     path("", include("django.contrib.auth.urls")),
 
     path("dashboard/", views.dashboard, name="dashboard"),
+    path("help/", views.help_guide, name="help_guide"),
+
 
 
 
@@ -46,6 +48,7 @@ urlpatterns = [
     path("display/board/", views.display_board, name="display_board"),
     path("api/dashboard/recent/", views.dashboard_recent_api, name="dashboard_recent_api"),
     path("api/dashboard/counts/", views.dashboard_counts_api, name="dashboard_counts_api"),
+
 
     # Public QR
     path("t/<uuid:token>/", views.public_token_view, name="public_token"),

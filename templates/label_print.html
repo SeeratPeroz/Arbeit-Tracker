@@ -1,23 +1,195 @@
 {% extends 'base.html' %}
+{% block title %}Label — {{ case.case_code }}{% endblock %}
 {% block content %}
+
+<!-- Screen toolbar (not printed) -->
 <div class="d-print-none mb-3">
-<button class="btn btn-primary" onclick="window.print()">Drucken</button>
-<a class="btn btn-outline-secondary" href="/cases/{{ case.id }}/">Zurück</a>
+  <button class="btn btn-primary" onclick="window.print()">Drucken</button>
+  <a class="btn btn-outline-secondary" href="{% url 'case_detail' case.id %}">Zurück</a>
 </div>
-<div class="label-a6 border p-3">
-<div class="d-flex justify-content-between">
-<div>
-<div class="fw-bold">{{ case.case_code }}</div>
-<div>{{ case.patient_name }}</div>
-<div>Geb.: {{ case.patient_dob|date:'d.m.Y' }}</div>
-<div>Labor: {{ case.lab }}</div>
-<!-- By default we do NOT print the protection code for safety.
-If you want it visible, uncomment next line: -->
-<!-- <div>Sicherheitscode: <strong>{{ case.protection_code }}</strong></div> -->
-<div class="mt-1 small">Status: {{ case.get_status_display }}</div>
+
+<!-- ===== SCREEN PREVIEW (unchanged) ===== -->
+<div class="d-print-none">
+  <div class="label-a6 border p-3">
+    <div class="d-flex justify-content-between">
+      <div>
+        <div class="fw-bold">{{ case.case_code }}</div>
+        <div>{{ case.patient_name }}</div>
+        <div>Geb.: {{ case.patient_dob|date:'d.m.Y' }}</div>
+        <div>Labor: {{ case.lab }}</div>
+        <div class="mt-1 small">Status: {{ case.get_status_display }}</div>
+      </div>
+      <img alt="QR" src="{% url 'case_qr_png' case.id %}" style="width:160px;height:160px;"/>
+    </div>
+    <div class="small mt-2">Scannen → Status aktualisieren</div>
+  </div>
 </div>
-<img alt="QR" src="/cases/{{ case.id }}/qr.png" style="width:160px;height:160px;"/>
+
+<!-- ===== PRINT-ONLY: LANDSCAPE 80 × 50 mm ===== -->
+<div id="print-label" aria-hidden="true">
+  <div class="pl8050-wrap">
+    <div class="pl8050-grid">
+      <!-- LEFT: Content -->
+      <div class="pl-left">
+        <!-- Header row -->
+        <div class="pl-head">
+          <div class="pl-code">{{ case.case_code }}</div>
+          <div class="pl-lab">Labor: {{ case.lab.name|default:case.lab }}</div>
+        </div>
+
+        <div class="pl-sep"></div>
+
+        <!-- Patient block -->
+        <div class="pl-patient">
+            <br>
+          <div class="pl-name">{{ case.patient_name }}</div>
+          <div class="pl-dob">Geburtsdatum: {{ case.patient_dob|date:'d.m.Y' }}</div>
+        </div>
+
+        <!-- Footer info -->
+        <div class="pl-footer">
+          <div class="pl-status">Status: {{ case.get_status_display }}</div>
+          <div class="pl-hint">Bitte QR-Code scannen, um den Status zu aktualisieren.</div>
+        </div>
+      </div>
+
+      <!-- RIGHT: QR block -->
+      <div class="pl-qr">
+        <img alt="QR" src="{% url 'case_qr_png' case.id %}">
+        <div class="pl-qr-cap">SCAN</div>
+      </div>
+    </div>
+  </div>
 </div>
-<div class="small mt-2">Scannen → Status aktualisieren</div>
-</div>
+
+<style>
+/* -------- PRINT PAGE: landscape 80 × 50 mm -------- */
+@page { size: 80mm 50mm; margin: 0; }  /* width × height */
+
+@media print {
+  /* Show only the print label */
+  body * { visibility: hidden !important; }
+  #print-label, #print-label * { visibility: visible !important; }
+  #print-label { position: fixed; inset: 0; width: 78mm; height: 48mm; }
+  html, body { width: 78mm; height: 48mm; margin: 0 !important; padding: 0 !important; }
+
+  .navbar, .toast, .modal { display: none !important; }
+}
+
+/* Hidden on screen; visible when printing */
+#print-label { display: none; }
+@media print { #print-label { display: block; } }
+
+/* -------- LAYOUT & TYPOGRAPHY (optimized for readability) -------- */
+.pl8050-wrap{
+  width: 78mm; height: 48mm;
+  box-sizing: border-box;
+  padding: 2.2mm;                 /* safe margin */
+  color: #000;                     /* thermal-friendly */
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+
+/* Two columns: generous text area + QR column */
+.pl8050-grid{
+  display: grid;
+  grid-template-columns: 1fr 26mm;   /* QR column ~26mm */
+  gap: 2.2mm;
+  height: 100%;
+}
+
+/* Left column is vertically spaced: head, divider, patient, spacer, footer */
+.pl-left{
+  display: grid;
+  grid-template-rows: auto 1.2mm auto 1fr auto;
+  min-width: 0;
+  height: 100%;
+}
+
+/* Header: big code + lab */
+.pl-head{ min-width: 0; }
+.pl-code{
+  font-weight: 800;
+  font-size: 12pt;                 /* strong & readable */
+  letter-spacing: .2px;
+  line-height: 1.1;
+  text-transform: uppercase;
+  overflow-wrap: anywhere; word-break: break-word;
+}
+.pl-lab{
+  margin-top: .8mm;
+  font-size: 9pt;
+  line-height: 1.2;
+  overflow-wrap: anywhere; word-break: break-word;
+  color: #111;
+}
+
+/* Divider line (prints well on low-DPI) */
+.pl-sep{
+  height: 0.45mm;
+  background: #000;
+  border-radius: .25mm;
+  margin: 1.6mm 0;
+  opacity: .95;
+}
+
+/* Patient block */
+.pl-patient{
+  display: grid;
+  row-gap: 1mm;
+  min-width: 0;
+}
+.pl-name{
+  font-weight: 700;
+  font-size: 11pt;                 /* clear emphasis */
+  line-height: 1.2;
+  overflow-wrap: anywhere; word-break: break-word;
+}
+.pl-dob{
+  font-size: 9pt;
+  line-height: 1.2;
+  overflow-wrap: anywhere; word-break: break-word;
+}
+
+/* Footer */
+.pl-footer{
+  align-self: end;
+  display: grid;
+  row-gap: .8mm;
+}
+.pl-status{
+  font-size: 9pt;
+  line-height: 1.2;
+  overflow-wrap: anywhere; word-break: break-word;
+}
+.pl-hint{
+  font-size: 8pt;
+  line-height: 1.15;
+  color: #333;
+  overflow-wrap: anywhere; word-break: break-word;
+}
+
+/* Right QR column */
+.pl-qr{
+  display: grid;
+  grid-template-rows: 1fr auto;   /* QR + caption */
+  align-items: center;
+  justify-items: center;
+  height: 100%;
+}
+.pl-qr img{
+  width: 24mm; height: 24mm;      /* crisp, easy to scan */
+  object-fit: contain;
+}
+.pl-qr-cap{
+  margin-top: 1mm;
+  font-size: 8pt;
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+
+/* Safety: avoid overflow cutting */
+.pl8050-wrap, .pl8050-grid, .pl-left, .pl-patient, .pl-footer { overflow: hidden; }
+</style>
+
 {% endblock %}

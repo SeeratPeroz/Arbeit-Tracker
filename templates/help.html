@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% block title %}Hilfe & Leitfaden — Case Tracker{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Hilfe & Leitfaden</h3>
+</div>
+
+<div class="alert alert-info">
+  Dieser Leitfaden erklärt die wichtigsten Abläufe für <strong>Praxis</strong> und <strong>Labor</strong>.
+  Nutzen Sie die Inhalte unten – inklusive Tipps, Druckhinweisen und Fehlerbehebung.
+</div>
+
+<div class="accordion" id="guideAccordion">
+
+  <!-- Praxis -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="hdrPraxis">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#colPraxis">
+        Praxis – tägliche Arbeitsschritte
+      </button>
+    </h2>
+    <div id="colPraxis" class="accordion-collapse collapse show" data-bs-parent="#guideAccordion">
+      <div class="accordion-body">
+
+        <h5 class="mb-2">1) Neuer Fall</h5>
+        <ul>
+          <li>Menü <em>Neuer Fall</em> öffnen, Patientendaten ausfüllen, Labor wählen.</li>
+          <li>Speichern → Fall wird mit <strong>Fall-Code</strong> angelegt und Status <em>Von der Praxis gesendet</em>.</li>
+        </ul>
+
+        <h5 class="mt-4 mb-2">2) Etikett drucken</h5>
+        <ul>
+          <li>Im Fall auf <em>Label</em> gehen → <strong>Drucken</strong>.</li>
+          <li>Druckdialog: <em>Skalierung 100 %</em>, <em>Ränder: Keine</em>, <em>Kopf-/Fußzeilen: Aus</em>.</li>
+          <li>QR-Code am Behälter/Beutel anbringen.</li>
+        </ul>
+
+        <h5 class="mt-4 mb-2">3) Status-Verlauf (Übersicht)</h5>
+        <div class="row g-3">
+          <div class="col-md-3"><span class="badge bg-secondary">Von der Praxis gesendet</span></div>
+          <div class="col-md-3"><span class="badge bg-secondary">Im Labor eingegangen</span></div>
+          <div class="col-md-3"><span class="badge bg-secondary">An die Praxis zurückgesendet</span></div>
+          <div class="col-md-3"><span class="badge bg-secondary">In der Praxis erhalten</span></div>
+        </div>
+        <small class="text-muted d-block mt-2">Der Status wechselt durch Scannen des QR-Codes (Labor) oder Bestätigung in der Praxis.</small>
+
+        <h5 class="mt-4 mb-2">4) Fälle finden & filtern</h5>
+        <ul>
+          <li>Seite <em>Fälle</em>: Suchfeld für Patient/Fall-Code/Labor.</li>
+          <li>Status-Buttons filtern nach Status; Laborauswahl filtert nach Labor.</li>
+          <li>Sortierung: standardmäßig neueste Fälle oben.</li>
+        </ul>
+
+        <h5 class="mt-4 mb-2">5) Praxis-PIN & Labore verwalten</h5>
+        <ul>
+          <li><em>Einstellungen → Praxis-PIN</em>: PIN ändern, Labore anlegen/bearbeiten, PIN pro Labor setzen.</li>
+          <li><em>Labor-Logins</em>: Labor-Benutzer anlegen, Passwort setzen/zurücksetzen, aktiv/deaktiv.</li>
+        </ul>
+
+        <h5 class="mt-4 mb-2">6) TV-Anzeige (Live-Board)</h5>
+        <ul>
+          <li>Seite: <code>/display/board/</code> – zeigt Live-Liste und Zähler, Auto-Refresh.</li>
+          <li>Am TV im Vollbild/Kioskmodus öffnen; eigener “Display”-Benutzer empfohlen.</li>
+        </ul>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Labor -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="hdrLabor">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#colLabor">
+        Labor – tägliche Arbeitsschritte
+      </button>
+    </h2>
+    <div id="colLabor" class="accordion-collapse collapse" data-bs-parent="#guideAccordion">
+      <div class="accordion-body">
+
+        <h5 class="mb-2">1) Einloggen & Fälle sehen</h5>
+        <ul>
+          <li>Nach Login → <em>Labor-Fälle</em>: es werden nur Fälle des eigenen Labors angezeigt.</li>
+          <li>Suche nach Fall-Code/Patient; Statusfilter verfügbar.</li>
+        </ul>
+
+        <h5 class="mt-4 mb-2">2) QR-Code scannen & Status setzen</h5>
+        <ul>
+          <li>QR scannen → öffnet die Token-Seite des Falls.</li>
+          <li>Labor gibt den <strong>Labor-PIN</strong> ein und setzt
+            <em>Im Labor eingegangen</em> oder <em>An die Praxis zurückgesendet</em>.</li>
+          <li>Optional Notiz hinzufügen (z. B. Befundnummer, Hinweise).</li>
+        </ul>
+
+        <h5 class="mt-4 mb-2">3) Fall-Detail im Labor</h5>
+        <ul>
+          <li>Seite <em>Labor-Fälle</em> → Fall öffnen.</li>
+          <li>Erlaubte Aktionen werden kontextabhängig angezeigt (z. B. <em>Im Labor eingegangen</em> solange der Fall noch nicht eingegangen ist).</li>
+        </ul>
+
+        <h5 class="mt-4 mb-2">4) PINs</h5>
+        <ul>
+          <li>Labor-PIN wird durch die Praxis vergeben/ geändert.</li>
+          <li>Fehler “Schutzcode ist falsch” → PIN prüfen oder Praxis kontaktieren.</li>
+        </ul>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Drucken & Etiketten -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="hdrPrint">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#colPrint">
+        Etikettendruck – Hinweise
+      </button>
+    </h2>
+    <div id="colPrint" class="accordion-collapse collapse" data-bs-parent="#guideAccordion">
+      <div class="accordion-body">
+        <ul>
+          <li>Im Druckdialog <strong>Skalierung 100 %</strong> (oder “Tatsächliche Größe”), <strong>Ränder: Keine</strong>,
+              <strong>Kopf-/Fußzeilen: Aus</strong>.</li>
+          <li>Für spezielle Formate (z. B. 80×50 mm, 40×30 mm, 45×28 mm) gibt es druckoptimierte Seiten.</li>
+          <li>QR-Code nicht zu klein wählen (≥ 16–22 mm) für zuverlässiges Scannen.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sicherheit & Datenschutz -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="hdrSecurity">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#colSecurity">
+        Sicherheit & Datenschutz
+      </button>
+    </h2>
+    <div id="colSecurity" class="accordion-collapse collapse" data-bs-parent="#guideAccordion">
+      <div class="accordion-body">
+        <ul>
+          <li>Benutzerdaten nicht teilen, starke Passwörter verwenden.</li>
+          <li>QR-Token ist zufällig; ohne PIN wird kein Statuswechsel zugelassen.</li>
+          <li>Protokollierung: Ereignisse speichern Zeitpunkt, Aktion und Akteur (Praxis/Labor).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fehlerbehebung -->
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="hdrTrouble">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#colTrouble">
+        Fehlerbehebung (Troubleshooting)
+      </button>
+    </h2>
+    <div id="colTrouble" class="accordion-collapse collapse" data-bs-parent="#guideAccordion">
+      <div class="accordion-body">
+        <ul>
+          <li><strong>Fall erscheint nicht:</strong> Seite neu laden; Filter/Status prüfen; korrekten Login (Praxis vs. Labor) prüfen.</li>
+          <li><strong>PIN wird abgelehnt:</strong> Tippfehler, falsches Labor, oder Praxis-PIN/Labor-PIN verwechselt.</li>
+          <li><strong>QR-Code scannt nicht:</strong> zu klein/verschmutzt; mehr Licht; Druckqualität prüfen.</li>
+          <li><strong>Druck skaliert falsch:</strong> Im Druckdialog <em>100 %</em> wählen, Ränder aus, ggf. anderes Format.</li>
+          <li><strong>Passwort geändert, Login geht nicht:</strong> Bei gesetztem neuen Passwort einmal neu anmelden; Benutzer ggf. aktiv setzen.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<hr class="my-4">
+<p class="mb-0">
+  Haben Sie Fragen? Schreiben Sie an
+  <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>.
+</p>
+
+{% endblock %}
