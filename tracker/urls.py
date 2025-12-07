@@ -1,5 +1,7 @@
 from django.urls import include, path
 from . import views
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     # Home
@@ -49,7 +51,11 @@ urlpatterns = [
     path("api/dashboard/recent/", views.dashboard_recent_api, name="dashboard_recent_api"),
     path("api/dashboard/counts/", views.dashboard_counts_api, name="dashboard_counts_api"),
 
+    path("cases/<int:pk>/comment/", views.case_add_comment, name="case_add_comment"),
+
 
     # Public QR
     path("t/<uuid:token>/", views.public_token_view, name="public_token"),
 ]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

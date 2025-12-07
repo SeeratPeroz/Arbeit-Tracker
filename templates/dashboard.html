@@ -1,14 +1,18 @@
 {% extends 'base.html' %}
 {% block title %}Übersicht — Case Tracker{% endblock %}
+
 {% block content %}
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h3 class="mb-0">Übersicht</h3>
   {% if request.user.is_authenticated and request.user.profile.role == "CLINIC" %}
-    <a class="btn btn-primary" href="{% url 'case_new' %}"><i class="bi bi-plus-lg me-1"></i>Neuer Fall</a>
+    <a class="btn btn-primary" href="{% url 'case_new' %}">
+      <i class="bi bi-plus-lg me-1"></i>Neuer Fall
+    </a>
   {% endif %}
 </div>
 
+<!-- KPI cards -->
 <div class="row g-3 mb-4">
   <div class="col-6 col-md-3">
     <div class="p-3 border rounded-3 text-center">
@@ -43,6 +47,7 @@
 
 <div class="card">
   <div class="card-body">
+    <!-- Search row -->
     <div class="row g-2 align-items-center mb-3">
       <div class="col-auto">
         <i class="bi bi-search me-1"></i><span class="text-muted">Suche</span>
@@ -52,8 +57,9 @@
       </div>
     </div>
 
+    <!-- DataTable -->
     <div class="table-responsive">
-      <table id="recentTable" class="table table-sm align-middle">
+      <table id="recentTable" class="table table-sm align-middle w-100">
         <thead>
           <tr>
             <th>Fall</th>
@@ -64,33 +70,30 @@
             <th class="text-end">Aktion</th>
           </tr>
         </thead>
-        <tbody>
-          {% for c in recent %}
-            <tr>
-              <td class="fw-semibold">{{ c.case_code }}</td>
-              <td>{{ c.patient_name }}</td>
-              <td data-order="{{ c.patient_dob|date:'Y-m-d' }}">{{ c.patient_dob|date:'d.m.Y' }}</td>
-              <td>{{ c.lab }}</td>
-              <td>
-                <span class="badge rounded-pill status-badge" data-status="{{ c.status }}">{{ c.get_status_display }}</span>
-              </td>
-              <td class="text-end table-actions">
-                <a class="btn btn-sm btn-outline-primary" href="{% url 'case_detail' c.id %}">
-                  <i class="bi bi-box-arrow-up-right"></i> Öffnen
-                </a>
-                <button class="btn btn-sm btn-outline-danger"
-                        data-bs-toggle="modal"
-                        data-bs-target="#deleteConfirmModal"
-                        data-action="{% url 'case_delete' c.id %}">
-                  <i class="bi bi-trash"></i>
-                </button>
-              </td>
-            </tr>
-          {% empty %}
-            <tr><td colspan="6" class="text-muted">Keine Fälle</td></tr>
-          {% endfor %}
-        </tbody>
+        <tbody><!-- filled via AJAX --></tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<!-- Delete confirm modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form id="deleteForm" method="post">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="deleteConfirmLabel">Fall löschen?</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+        </div>
+        <div class="modal-body">
+          Dieser Vorgang kann nicht rückgängig gemacht werden.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Abbrechen</button>
+          <button type="submit" class="btn btn-danger">Löschen</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -99,18 +102,75 @@
 
 {% block extra_js %}
 <script>
-  document.addEventListener('DOMContentLoaded', function(){
-    const dt = new DataTable('#recentTable', {
-      fixedHeader: true,
-      responsive: true,
-      pageLength: 10,
-      order: [[2,'desc']], // sort by DOB by default (desc)
-      language: {
-        url: 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/de-DE.json'
-      }
+document.addEventListener('DOMContentLoaded', function () {
+  // Wire delete modal to pick up action from clicked button
+  const deleteModal = document.getElementById('deleteConfirmModal');
+  if (deleteModal) {
+    deleteModal.addEventListener('show.bs.modal', function (event) {
+      const btn = event.relatedTarget;
+      const action = btn?.getAttribute('data-action') || '';
+      const form = document.getElementById('deleteForm');
+      if (form && action) form.setAttribute('action', action);
     });
-    const input = document.getElementById('recentSearch');
-    input?.addEventListener('input', () => dt.search(input.value).draw());
+  }
+
+  // Build DataTable with AJAX (loads ALL cases so paging works)
+  const dt = new DataTable('#recentTable', {
+    ajax: {
+      url: "{% url 'dashboard_recent_api' %}?limit=ALL",
+      dataSrc: ""
+    },
+    columns: [
+      { data: 'case_code', render: (d) => `<span class="fw-semibold">${d}</span>` },
+      { data: 'patient_name' },
+      {
+        data: 'patient_dob',
+        render: (d, t, row) => `<span data-order="${row.patient_dob_order || ''}">${d || ''}</span>`
+      },
+      { data: 'lab' },
+      {
+        data: 'status_label',
+        render: (d, t, row) => `<span class="badge rounded-pill status-badge" data-status="${row.status}">${d}</span>`
+      },
+      {
+        data: null,
+        orderable: false,
+        searchable: false,
+        className: 'text-end table-actions',
+        render: (row) => `
+          <a class="btn btn-sm btn-outline-primary" href="${row.detail_url}">
+            <i class="bi bi-box-arrow-up-right"></i> Öffnen
+          </a>
+          <button class="btn btn-sm btn-outline-danger"
+                  data-bs-toggle="modal"
+                  data-bs-target="#deleteConfirmModal"
+                  data-action="${row.delete_url}">
+            <i class="bi bi-trash"></i>
+          </button>
+        `
+      }
+    ],
+    fixedHeader: true,
+    responsive: true,
+    pageLength: 25,
+    lengthMenu: [[10,25,50,100,500,-1],[10,25,50,100,500,'Alle']],
+    order: [[0, 'desc']], // sorts by data-order inside DOB cell
+    language: {
+      url: 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/de-DE.json'
+    }
   });
+
+  // Global search input
+  const input = document.getElementById('recentSearch');
+  input?.addEventListener('input', () => dt.search(input.value).draw());
+});
 </script>
+
+<style>
+/* Optional: colorize status badges by data-status */
+.status-badge[data-status="SENT_CLINIC"]        { background-color: #e7f1ff; color:#0b5ed7; }
+.status-badge[data-status="RECEIVED_BY_LAB"]   { background-color: #e8f5e9; color:#2e7d32; }
+.status-badge[data-status="RETURNED_BY_LAB"]   { background-color: #fff8e1; color:#b26a00; }
+.status-badge[data-status="RECEIVED_BY_CLINIC"]{ background-color: #f3e5f5; color:#6a1b9a; }
+</style>
 {% endblock %}

@@ -25,10 +25,10 @@
   </div>
 </div>
 
-<!-- ===== PRINT-ONLY: LANDSCAPE 80 × 50 mm ===== -->
+<!-- ===== PRINT-ONLY: D520, PORTRAIT 50 × 80 mm ===== -->
 <div id="print-label" aria-hidden="true">
-  <div class="pl8050-wrap">
-    <div class="pl8050-grid">
+  <div class="pl5080-wrap">
+    <div class="pl5080-grid">
       <!-- LEFT: Content -->
       <div class="pl-left">
         <!-- Header row -->
@@ -41,7 +41,6 @@
 
         <!-- Patient block -->
         <div class="pl-patient">
-            <br>
           <div class="pl-name">{{ case.patient_name }}</div>
           <div class="pl-dob">Geburtsdatum: {{ case.patient_dob|date:'d.m.Y' }}</div>
         </div>
@@ -63,15 +62,18 @@
 </div>
 
 <style>
-/* -------- PRINT PAGE: landscape 80 × 50 mm -------- */
-@page { size: 80mm 50mm; margin: 0; }  /* width × height */
+/* -------- PRINT PAGE: D520 portrait 80 × 50 mm (width × height) -------- */
+@page { size: 80mm 50mm; margin: 0; }
 
 @media print {
   /* Show only the print label */
   body * { visibility: hidden !important; }
   #print-label, #print-label * { visibility: visible !important; }
-  #print-label { position: fixed; inset: 0; width: 78mm; height: 48mm; }
-  html, body { width: 78mm; height: 48mm; margin: 0 !important; padding: 0 !important; }
+  #print-label { position: fixed; inset: 0; width: 80mm; height: 50mm; }
+  html, body { width: 80mm; height: 50mm; margin: 0 !important; padding: 0 !important; }
+
+  /* If your D520 has a small unprintable top margin, you can nudge the content: */
+  /* .pl5080-wrap { transform: translateY(0.5mm); } */
 
   .navbar, .toast, .modal { display: none !important; }
 }
@@ -80,73 +82,77 @@
 #print-label { display: none; }
 @media print { #print-label { display: block; } }
 
-/* -------- LAYOUT & TYPOGRAPHY (optimized for readability) -------- */
-.pl8050-wrap{
-  width: 78mm; height: 48mm;
+/* -------- LAYOUT & TYPOGRAPHY for 80 × 50 (content 78 × 48) -------- */
+.pl5080-wrap{
+  width: 78mm;           /* inner content area */
+  height: 48mm;
+  margin: 1mm;           /* 1mm safe margin all sides */
   box-sizing: border-box;
-  padding: 2.2mm;                 /* safe margin */
-  color: #000;                     /* thermal-friendly */
+  padding: 2mm;          /* inner padding inside content box */
+  color: #000;           /* thermal-friendly */
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  /* optional hairline border for alignment; comment out if not wanted */
+  /* border: 0.2mm solid #000; */
 }
 
-/* Two columns: generous text area + QR column */
-.pl8050-grid{
+/* Two columns: flexible text + fixed QR on the right */
+.pl5080-grid{
   display: grid;
-  grid-template-columns: 1fr 26mm;   /* QR column ~26mm */
-  gap: 2.2mm;
+  grid-template-columns: 1fr 22mm;   /* QR column ~22mm */
+  gap: 2mm;
   height: 100%;
 }
 
-/* Left column is vertically spaced: head, divider, patient, spacer, footer */
+/* Left column structure: head, divider, patient, spacer, footer */
 .pl-left{
   display: grid;
-  grid-template-rows: auto 1.2mm auto 1fr auto;
+  grid-template-rows: auto 1mm auto 1fr auto;
   min-width: 0;
   height: 100%;
 }
 
-/* Header: big code + lab */
+/* Header */
 .pl-head{ min-width: 0; }
 .pl-code{
   font-weight: 800;
-  font-size: 12pt;                 /* strong & readable */
+  font-size: 11pt;               /* strong & readable on 80mm height */
   letter-spacing: .2px;
   line-height: 1.1;
   text-transform: uppercase;
   overflow-wrap: anywhere; word-break: break-word;
 }
 .pl-lab{
-  margin-top: .8mm;
-  font-size: 9pt;
+  margin-top: .6mm;
+  font-size: 8.5pt;
   line-height: 1.2;
   overflow-wrap: anywhere; word-break: break-word;
   color: #111;
 }
 
-/* Divider line (prints well on low-DPI) */
+/* Divider */
 .pl-sep{
-  height: 0.45mm;
+  height: 0.4mm;
   background: #000;
   border-radius: .25mm;
-  margin: 1.6mm 0;
+  margin: 1.4mm 0;
   opacity: .95;
 }
 
 /* Patient block */
 .pl-patient{
   display: grid;
-  row-gap: 1mm;
+  row-gap: .8mm;
   min-width: 0;
 }
 .pl-name{
   font-weight: 700;
-  font-size: 11pt;                 /* clear emphasis */
+  font-size: 10pt;
   line-height: 1.2;
   overflow-wrap: anywhere; word-break: break-word;
 }
 .pl-dob{
-  font-size: 9pt;
+  font-size: 8.5pt;
   line-height: 1.2;
   overflow-wrap: anywhere; word-break: break-word;
 }
@@ -155,15 +161,15 @@
 .pl-footer{
   align-self: end;
   display: grid;
-  row-gap: .8mm;
+  row-gap: .6mm;
 }
 .pl-status{
-  font-size: 9pt;
+  font-size: 8.5pt;
   line-height: 1.2;
   overflow-wrap: anywhere; word-break: break-word;
 }
 .pl-hint{
-  font-size: 8pt;
+  font-size: 7.5pt;
   line-height: 1.15;
   color: #333;
   overflow-wrap: anywhere; word-break: break-word;
@@ -178,7 +184,7 @@
   height: 100%;
 }
 .pl-qr img{
-  width: 24mm; height: 24mm;      /* crisp, easy to scan */
+  width: 22mm; height: 22mm;      /* crisp, easy to scan */
   object-fit: contain;
 }
 .pl-qr-cap{
@@ -189,7 +195,7 @@
 }
 
 /* Safety: avoid overflow cutting */
-.pl8050-wrap, .pl8050-grid, .pl-left, .pl-patient, .pl-footer { overflow: hidden; }
+.pl5080-wrap, .pl5080-grid, .pl-left, .pl-patient, .pl-footer { overflow: hidden; }
 </style>
 
 {% endblock %}

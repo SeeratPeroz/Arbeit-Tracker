@@ -123,7 +123,20 @@ class Event(models.Model):
 class Attachment(models.Model):
     """Dateianhänge (Berichte, Fotos, STL, etc.) pro Fall."""
     case = models.ForeignKey(Case, on_delete=models.CASCADE, related_name="attachments")
-    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    # Link to a comment in the conversation (optional)
+    comment = models.ForeignKey(
+        "CaseComment",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="attachments",
+    )
     file = models.FileField(upload_to="case_attachments/%Y/%m/")
     label = models.CharField(max_length=120, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -131,6 +144,30 @@ class Attachment(models.Model):
     def __str__(self):
         base = self.label or (self.file.name if self.file else "Attachment")
         return f"{self.case.case_code} — {base}"
+
+
+class CaseComment(models.Model):
+    """Conversation between clinic and lab per case."""
+    case = models.ForeignKey(Case, on_delete=models.CASCADE, related_name="comments")
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="case_comments",
+    )
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+    def author_role(self):
+        return getattr(getattr(self.author, "profile", None), "role", "") or "UNKNOWN"
+
+    def __str__(self):
+        who = self.author.username if self.author else "System"
+        return f"{self.case.case_code} – {who} @ {self.created_at:%Y-%m-%d %H:%M}"
 
 
 class UserProfile(models.Model):

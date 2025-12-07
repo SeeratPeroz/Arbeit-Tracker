@@ -15,7 +15,7 @@ SUPPORT_EMAIL = "s.peroz@dens-health-management.de"
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-key")
 DEBUG = os.getenv("DEBUG", "1") == "1"
 # settings.py
-ALLOWED_HOSTS = ["tracker.cleverimplant.de", "127.0.0.1", "localhost"]
+ALLOWED_HOSTS = ["tracker.cleverimplant.de", "127.0.0.1", "localhost", "192.168.15.140"]
 
 # Installed apps
 INSTALLED_APPS = [

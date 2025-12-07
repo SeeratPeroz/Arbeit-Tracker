@@ -1,9 +1,27 @@
 from django import forms
-from .models import Case, Attachment, Lab
 from django.core.validators import RegexValidator
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
+from .models import Case, Attachment, Lab
+
+
+class CaseCommentForm(forms.Form):
+    text = forms.CharField(
+        label="Nachricht",
+        widget=forms.Textarea(attrs={
+            "rows": 3,
+            "class": "form-control",
+            "placeholder": "Nachricht an Labor / Praxis …"
+        }),
+    )
+    files = forms.FileField(
+        label="Anhänge",
+        required=False,
+        widget=forms.ClearableFileInput(
+            attrs={"class": "form-control"}
+        ),
+    )
 
 
 class CaseCreateForm(forms.ModelForm):
@@ -15,7 +33,7 @@ class CaseCreateForm(forms.ModelForm):
             "patient_dob": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "lab": forms.Select(attrs={"class": "form-select"}),
         }
-from django import forms
+
 
 class LabSearchForm(forms.Form):
     case_code = forms.CharField(label="Fallnummer", max_length=32)
@@ -24,8 +42,11 @@ class LabSearchForm(forms.Form):
 class LabActionForm(forms.Form):
     # make PIN optional; we’ll ignore it for logged-in LAB users
     code = forms.CharField(label="Schutzcode (PIN)", max_length=6, required=False)
-    note = forms.CharField(label="Notiz (optional)", required=False,
-                           widget=forms.Textarea(attrs={"rows": 2}))
+    note = forms.CharField(
+        label="Notiz (optional)",
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 2}),
+    )
     action = forms.ChoiceField(choices=[
         ("receive_lab", "Im Labor eingegangen"),
         ("return_lab", "Zurück an Praxis"),
@@ -45,17 +66,18 @@ class GlobalPinForm(forms.Form):
         if not data.get("new_pin").isdigit() or len(data.get("new_pin")) != 6:
             raise forms.ValidationError("PIN muss 6 Ziffern haben.")
         return data
-    
-
 
 
 class LabPinForm(forms.Form):
     new_pin = forms.CharField(
-        min_length=6, max_length=10,
-        validators=[RegexValidator(r'^[A-Za-z0-9]{6,10}$',
-                                   'PIN muss 6–10 Zeichen (nur Buchstaben/Ziffern) haben.')]
+        min_length=6,
+        max_length=10,
+        validators=[RegexValidator(
+            r'^[A-Za-z0-9]{6,10}$',
+            'PIN muss 6–10 Zeichen (nur Buchstaben/Ziffern) haben.'
+        )]
     )
-    
+
 
 class PraxisPinForm(forms.Form):
     new_pin = forms.CharField(label="Neuer Praxis-PIN (6-stellig)", max_length=6)
@@ -68,15 +90,17 @@ class PraxisPinForm(forms.Form):
         if not d.get("new_pin").isdigit() or len(d.get("new_pin")) != 6:
             raise forms.ValidationError("PIN muss 6 Ziffern haben.")
         return d
-    
+
 
 class CaseForm(forms.ModelForm):
     class Meta:
         model = Case
-        exclude = ['case_code']   # or list all fields EXCEPT case_code
+        # edit only basic patient + lab fields
         fields = ['patient_name', 'patient_dob', 'lab']
         widgets = {
-            'patient_dob': forms.DateInput(attrs={'type': 'date'}),
+            'patient_dob': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'patient_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'lab': forms.Select(attrs={'class': 'form-select'}),
         }
 
 
@@ -89,23 +113,30 @@ class LabStatusForm(forms.ModelForm):
             'eta': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
         }
 
+
 class LabReturnForm(forms.ModelForm):
     class Meta:
         model = Case
         fields = ['returned_tracking_no', 'returned_at']
         widgets = {
-            'returned_tracking_no': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Sendungsnummer'}),
-            'returned_at': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'returned_tracking_no': forms.TextInput(
+                attrs={'class': 'form-control', 'placeholder': 'Sendungsnummer'}
+            ),
+            'returned_at': forms.DateTimeInput(
+                attrs={'type': 'datetime-local', 'class': 'form-control'}
+            ),
         }
+
 
 class AttachmentForm(forms.ModelForm):
     class Meta:
         model = Attachment
         fields = ['file', 'label']
         widgets = {
-            'label': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Beschreibung (optional)'}),
+            'label': forms.TextInput(
+                attrs={'class': 'form-control', 'placeholder': 'Beschreibung (optional)'}
+            ),
         }
-
 
 
 # Forms for managing Labs and Lab Users
@@ -120,11 +151,26 @@ class LabForm(forms.ModelForm):
 
 
 class LabUserCreateForm(forms.Form):
-    lab = forms.ModelChoiceField(queryset=Lab.objects.all(), widget=forms.Select(attrs={'class':'form-select'}))
-    username = forms.CharField(max_length=150, widget=forms.TextInput(attrs={'class':'form-control'}))
-    email = forms.EmailField(required=False, widget=forms.EmailInput(attrs={'class':'form-control'}))
-    password1 = forms.CharField(min_length=8, widget=forms.PasswordInput(attrs={'class':'form-control'}))
-    password2 = forms.CharField(min_length=8, widget=forms.PasswordInput(attrs={'class':'form-control'}))
+    lab = forms.ModelChoiceField(
+        queryset=Lab.objects.all(),
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    username = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(attrs={'class': 'form-control'})
+    )
+    password1 = forms.CharField(
+        min_length=8,
+        widget=forms.PasswordInput(attrs={'class': 'form-control'})
+    )
+    password2 = forms.CharField(
+        min_length=8,
+        widget=forms.PasswordInput(attrs={'class': 'form-control'})
+    )
     is_active = forms.BooleanField(required=False, initial=True)
 
     def clean_username(self):
@@ -139,17 +185,34 @@ class LabUserCreateForm(forms.Form):
         if p1 and p2 and p1 != p2:
             self.add_error('password2', "Passwörter stimmen nicht überein.")
         return cd
-    
+
 
 class LabUserEditForm(forms.Form):
-    lab = forms.ModelChoiceField(queryset=Lab.objects.all(), widget=forms.Select(attrs={'class':'form-select'}))
-    username = forms.CharField(max_length=150, widget=forms.TextInput(attrs={'class':'form-control'}))
-    email = forms.EmailField(required=False, widget=forms.EmailInput(attrs={'class':'form-control'}))
+    lab = forms.ModelChoiceField(
+        queryset=Lab.objects.all(),
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    username = forms.CharField(
+        max_length=150,
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(attrs={'class': 'form-control'})
+    )
     is_active = forms.BooleanField(required=False)
-    password1 = forms.CharField(required=False, min_length=8, widget=forms.PasswordInput(attrs={'class':'form-control'}))
-    password2 = forms.CharField(required=False, min_length=8, widget=forms.PasswordInput(attrs={'class':'form-control'}))
+    password1 = forms.CharField(
+        required=False,
+        min_length=8,
+        widget=forms.PasswordInput(attrs={'class': 'form-control'})
+    )
+    password2 = forms.CharField(
+        required=False,
+        min_length=8,
+        widget=forms.PasswordInput(attrs={'class': 'form-control'})
+    )
 
-    def __init__(self, *args, user_instance: User=None, **kwargs):
+    def __init__(self, *args, user_instance: User = None, **kwargs):
         self.user_instance = user_instance
         super().__init__(*args, **kwargs)
 

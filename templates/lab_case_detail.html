@@ -9,7 +9,6 @@
       <div><strong>Status:</strong> {{ case.get_status_display }}</div>
       <div class="mt-3">
         <img src="{% url 'lab_case_qr_png' case.pk %}" alt="QR" class="img-thumbnail" style="max-width:140px">
-
       </div>
     </div></div>
   </div>
@@ -49,4 +48,57 @@
     {% endfor %}
   </ul>
 </div></div>
+
+<hr class="my-4">
+
+<!-- Chat / Comments -->
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title">Kommunikation mit Praxis</h5>
+
+    <!-- Existing messages -->
+    <div class="mb-3" style="max-height: 320px; overflow-y: auto;">
+      {% for c in case.comments.all %}
+        <div class="mb-2 pb-2 border-bottom">
+          <div class="small text-muted">
+            {{ c.created_at|date:"d.m.Y H:i" }} ·
+            {% if c.author %}
+              {{ c.author.username }}
+              {% if c.author.profile.role == "CLINIC" %}(Praxis){% elif c.author.profile.role == "LAB" %}(Labor){% endif %}
+            {% else %}
+              System
+            {% endif %}
+          </div>
+          <div>{{ c.text|linebreaksbr }}</div>
+
+          {% if c.attachments.all %}
+            <div class="mt-1 small">
+              Anhänge:
+              {% for a in c.attachments.all %}
+                <a href="{{ a.file.url }}" target="_blank">{{ a.label|default:a.file.name }}</a>{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      {% empty %}
+        <p class="text-muted mb-0">Noch keine Nachrichten.</p>
+      {% endfor %}
+    </div>
+
+    <!-- New message form -->
+    <form method="post" action="{% url 'case_add_comment' case.id %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="mb-2">
+        <label class="form-label">Neue Nachricht</label>
+        <textarea name="text" rows="3" class="form-control" required></textarea>
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Anhänge (optional)</label>
+        <input type="file" name="files" class="form-control" multiple>
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm">Senden</button>
+    </form>
+
+  </div>
+</div>
 {% endblock %}

@@ -23,9 +23,11 @@ from .forms import (
     LabPinForm,
     GlobalPinForm,
     PraxisPinForm,
-    CaseForm,   LabForm,
+    CaseForm,
+    LabForm,
+    CaseCommentForm,  # NEW
 )
-from .models import Case, Event, Lab, AppSettings
+from .models import Case, Event, Lab, AppSettings, CaseComment, Attachment
 from .utils import public_token_url
 
 
@@ -161,6 +163,7 @@ def case_new(request):
 @login_required
 def case_detail(request, pk: int):
     case = get_object_or_404(Case, pk=pk)
+    # comments will be accessed via case.comments.all in template
     return render(request, "case_detail.html", {"case": case})
 
 @role_required("CLINIC")
@@ -531,6 +534,7 @@ def clinic_create_lab_user(request):
             for err in errs:
                 messages.error(request, f"{field}: {err['message']}")
     return redirect("clinic_lab_users")
+
 @require_POST
 @login_required
 def clinic_edit_lab_user(request, user_id):
@@ -589,27 +593,30 @@ def display_board(request):
 @login_required
 @role_required("CLINIC")
 def dashboard_recent_api(request):
-    # Optional: allow ?limit=50 on TV
-    try:
-        limit = max(1, min(int(request.GET.get("limit", 25)), 100))
-    except ValueError:
-        limit = 25
-
-    qs = (Case.objects
-          .select_related("lab")
-          .order_by("-created_at")[:limit])
+    # ?limit=ALL to return everything; otherwise cap to a sane number
+    limit_param = (request.GET.get("limit") or "").strip().lower()
+    if limit_param in ("all", "0", "-1"):
+        qs = Case.objects.select_related("lab").order_by("-created_at")
+    else:
+        try:
+            limit = max(1, min(int(limit_param or 500), 2000))  # default 500, hard cap 2000
+        except ValueError:
+            limit = 500
+        qs = Case.objects.select_related("lab").order_by("-created_at")[:limit]
 
     data = [{
         "id": c.id,
         "case_code": c.case_code,
         "patient_name": c.patient_name,
-        "patient_dob": c.patient_dob.strftime("%d.%m.%Y"),
-        "patient_dob_order": c.patient_dob.strftime("%Y-%m-%d"),
+        "patient_dob": c.patient_dob.strftime("%d.%m.%Y") if c.patient_dob else "",
+        "patient_dob_order": c.patient_dob.strftime("%Y-%m-%d") if c.patient_dob else "",
         "lab": c.lab.name if c.lab else "",
         "status": c.status,
         "status_label": c.get_status_display(),
         "detail_url": reverse("case_detail", args=[c.id]),
+        "delete_url": reverse("case_delete", args=[c.id]),
     } for c in qs]
+
     return JsonResponse(data, safe=False)
 
 @login_required
@@ -623,6 +630,52 @@ def dashboard_counts_api(request):
     })
 
 
+# -------------------------------
+# CHAT / COMMENTS: clinic + lab
+# -------------------------------
+@require_POST
+@login_required
+def case_add_comment(request, pk):
+    """
+    Add a message + optional attachments to a case.
+    Clinic can comment on all cases, Lab only on its own lab's cases.
+    """
+    case = get_object_or_404(Case, pk=pk)
+    role = user_role(request.user)
+
+    if role == "CLINIC":
+        allowed = True
+    elif role == "LAB":
+        allowed = (case.lab_id == getattr(user_lab(request.user), "id", None))
+    else:
+        allowed = False
+
+    if not allowed:
+        return HttpResponseForbidden("Nicht erlaubt für diesen Fall.")
+
+    form = CaseCommentForm(request.POST, request.FILES)
+    if form.is_valid():
+        comment = CaseComment.objects.create(
+            case=case,
+            author=request.user,
+            text=form.cleaned_data["text"].strip(),
+        )
+        # multiple files
+        for f in request.FILES.getlist("files"):
+            Attachment.objects.create(
+                case=case,
+                uploaded_by=request.user,
+                comment=comment,
+                file=f,
+                label=f.name,
+            )
+        messages.success(request, "Nachricht gesendet.")
+    else:
+        messages.error(request, "Bitte Nachricht oder Anhänge prüfen.")
+
+    if role == "LAB":
+        return redirect("lab_case_detail", pk=case.pk)
+    return redirect("case_detail", pk=case.pk)
 
 
 @login_required
