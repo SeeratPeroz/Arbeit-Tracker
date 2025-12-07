@@ -28,6 +28,8 @@ urlpatterns = [
     path("settings/pin/", views.settings_pin, name="settings_pin"),
     path("settings/praxis-pin/", views.settings_praxis_pin, name="settings_praxis_pin"),
     path("labs/<int:lab_id>/set-pin/", views.clinic_set_lab_pin, name="clinic_set_lab_pin"),
+    path("cases/<int:pk>/rollback/", views.clinic_status_rollback, name="clinic_status_rollback"),
+
 
     # Lab
     path("lab/", views.lab_home, name="lab_home"),

@@ -133,6 +133,52 @@ def cases_list(request):
         "labs": labs,
     })
 
+# (already imported above in your file, so don’t duplicate it)
+
+# ...
+
+# -------------------------------
+# CLINIC: status rollback (one step back)
+# -------------------------------
+@login_required
+@role_required("CLINIC")
+@require_POST
+def clinic_status_rollback(request, pk):
+    from .models import Case, Event  # if not already imported at top
+
+    case = get_object_or_404(Case, pk=pk)
+
+    # map current status -> previous status
+    previous_map = {
+        Case.Status.RECEIVED_BY_LAB: Case.Status.SENT_CLINIC,
+        Case.Status.RETURNED_BY_LAB: Case.Status.RECEIVED_BY_LAB,
+        Case.Status.RECEIVED_BY_CLINIC: Case.Status.RETURNED_BY_LAB,
+    }
+
+    old_status = case.status
+    new_status = previous_map.get(old_status)
+
+    if not new_status:
+        messages.error(request, "Dieser Status kann nicht zurückgesetzt werden.")
+        return redirect("case_detail", pk=case.pk)
+
+    # Log event
+    Event.objects.create(
+        case=case,
+        status=new_status,
+        actor="CLINIC",
+        note=f"Status-Korrektur von {case.get_status_display()} auf {Case.Status(new_status).label}",
+    )
+
+    # Apply new status
+    case.status = new_status
+    case.save(update_fields=["status"])
+
+    messages.success(request, "Status wurde einen Schritt zurückgesetzt.")
+    return redirect("case_detail", pk=case.pk)
+
+
+
 # -------------------------------
 # CLINIC: create / detail / label
 # -------------------------------
